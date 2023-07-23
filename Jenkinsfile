@@ -1,36 +1,37 @@
-node {
-
-  // config 
-  def to = emailextrecipients([
-          [$class: 'CulpritsRecipientProvider'],
-          [$class: 'DevelopersRecipientProvider'],
-          [$class: 'RequesterRecipientProvider']
-  ])
-
-  // job
-  try {
-    stage('build') {
-      println('so far so good...')
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // This step checks out the code from your repository
+                // Make sure to configure your repository URL in the Jenkins project
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                // This step installs the Node.js dependencies using npm or yarn
+                sh 'npm install' // or 'yarn install'
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                // If you have automated tests for your JavaScript code, run them here
+                // For example, if you're using npm, you might run: 'npm test'
+                // If you don't have tests, you can skip this stage
+                sh 'npm test'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // This step builds your JavaScript project
+                // For example, if you're using npm, you might run: 'npm run build'
+                sh 'npm run build'
+            }
+        }
     }
-    stage('test') {
-      println('A test has failed!')
-      sh 'exit 1'
-    }
-  } catch(e) {
-    // mark build as failed
-    currentBuild.result = "FAILURE";
-    // set variables
-    def subject = "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} ${currentBuild.result}"
-    def content = '${JELLY_SCRIPT,template="html"}'
-
-    // send email
-    if(to != null && !to.isEmpty()) {
-      emailext(body: content, mimeType: 'text/html',
-         replyTo: '$DEFAULT_REPLYTO', subject: subject,
-         to: to, attachLog: true )
-    }
-
-    // mark current build as a failure and throw the error
-    throw e;
-  }
 }
